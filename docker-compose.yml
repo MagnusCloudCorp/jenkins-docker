@@ -1,0 +1,22 @@
+version: '3'
+
+networks:
+  cinetwork:
+
+services:
+  jenkins:
+    image: benabs/jenkins
+    privileged: true
+    ports:
+      - "18080:8080"
+      - "50000:50000"
+    networks:
+      - cinetwork
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock
+      # - /usr/local/bin/docker:/usr/bin/docker
+      - jenkins-data:/var/jenkins_home
+
+
+volumes:
+  jenkins-data:
