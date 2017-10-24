@@ -1,17 +1,36 @@
-FROM jenkins/jenkins:lts-alpine
+FROM jenkins/jenkins:lts
 
-
-# Change to root user
 USER root
 
-# Docker and Docker Compose versions to be installed
-# ARG DOCKER=17.06.2-ce
-# ARG DOCKER_COMPOSE=1.16.1
-# RUN groupadd -for -g ${DOCKER_GID} ${DOCKER_GROUP}
-# RUN usermod -aG ${DOCKER_GROUP} jenkins
+# pre-install docker-ce
+RUN apt-get update && \
+	apt-get install -y \
+		apt-transport-https \
+		ca-certificates \
+		curl \
+		gnupg2 \
+		software-properties-common
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
+	add-apt-repository \
+		"deb [arch=amd64] https://download.docker.com/linux/debian \
+		$(lsb_release -cs) \
+		stable" && \
+	apt-get update
 
-RUN apk -U --no-cache add docker shadow
+# install docker-ce
+RUN apt-get install -y docker-ce
 
-RUN usermod -aG docker jenkins
+# install setup script
+COPY setup_docker_GID.sh /
 
-USER jenkins
+# add jenkins user to docker group (it exists by now)
+RUN gpasswd -a jenkins docker && \
+# clean up
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/* && \
+# make setup script executable
+	chmod g+x /setup_docker_GID.sh
+
+# stay user root, the setup script will start jenkins as jenkins user
+
+ENTRYPOINT ["/setup_docker_GID.sh"]
